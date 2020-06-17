@@ -1,0 +1,60 @@
+<script src="{{ url_for('static', filename='includes/jquery/js/jquery-3.4.1.js') }}"></script>
+<script src="{{ url_for('static', filename='includes/jquery/js/jquery.datatables.min.js') }}"></script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='includes/datatables/css/dataTables.bootstrap.css') }}">
+<script src="{{ url_for('static', filename='includes/datatables/js/dataTables.bootstrap.js') }}"></script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='includes/bootstrap-3.3.7/css/bootstrap.min.css') }}">
+<script src="{{ url_for('static', filename='includes/bootstrap-3.3.7/js/bootstrap.min.js') }}"></script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/datatable.css') }}">
+
+<html>
+    <head>
+        
+    </head>
+    <body>
+        <table id="orderTable" class="table table-striped table-bordered table-sm" cellspacing="0" width="100%">
+            <thead>
+                <tr>
+                    <th class="th-sm">_id</th>
+                    <th class="th-sm">occurrenceTime</th>
+                    <th class="th-sm">name</th>
+                    <th class="th-sm">triggerID</th>
+                    <th class="th-sm">occurrenceActionID</th>
+                    <th class="th-sm">lastOccurrenceTime</th>
+                    <th class="th-sm">lullTime</th>
+                    <th class="th-sm">lullTimeExpired</th>
+                    <th class="th-sm">match</th>
+                    <th class="th-sm">data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for occurrence in occurrences %}
+                    <tr>
+                        <td>{{ occurrence['_id'] }}</td>
+                        <td>{{ occurrence['occurrenceTime'] }}</td>
+                        <td>{{ occurrence['name'] }}</td>
+                        <td>{{ occurrence['triggerID'] }}</td>
+                        <td>{{ occurrence['occurrenceActionID'] }}</td>
+                        <td>{{ occurrence['lastOccurrenceTime'] }}</td>
+                        <td>{{ occurrence['lullTime'] }}</td>
+                        <td>{{ occurrence['lullTimeExpired'] }}</td>
+                        <td>{{ occurrence['match'] }}</td>
+                        <td>{{ occurrence['data'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+</html>
+
+<script>
+    $(document).ready(function () {
+        $('#orderTable').DataTable({
+            "paging" : false
+        });
+        $('.dataTables_length').addClass('bs-select');
+        $('.dataTables_filter input[type="search"]').css({'width':'200px'});
+    });
+</script>
