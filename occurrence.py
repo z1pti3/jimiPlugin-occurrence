@@ -1,12 +1,12 @@
 import uuid
 
 from core import db, logging, plugin, model
-from core.models import conduct, trigger
+from core.models import conduct, trigger, webui
 
 from plugins.occurrence.models import action
 
 class _occurrence(plugin._plugin):
-    version = 3.0
+    version = 3.1
 
     def install(self):
         # Register models
@@ -64,7 +64,7 @@ class _occurrence(plugin._plugin):
                 "type" : "trigger",
                 "triggerID" : t._id,
                 "next" : [
-                    flowActionID
+                    {"flowID": flowActionID, "logic": True }
                 ]
             },
             {
@@ -74,15 +74,21 @@ class _occurrence(plugin._plugin):
                 "next" : []
             }
         ]
-        c.enabled = True
-        c.update(["triggers","flow","enabled"])
+        webui._modelUI.new(c._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },flowTriggerID,0,0,"")
+        webui._modelUI.new(c._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },flowActionID,100,0,"")
 
+        c.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
+        c.enabled = True
+        c.update(["triggers","flow","enabled","acl"])
+
+        t.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
         t.schedule = "60-90s"
         t.enabled = True
-        t.update(["schedule","enabled"])
+        t.update(["schedule","enabled","acl"])
 
+        a.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
         a.enabled = True
-        a.update(["enabled"])
+        a.update(["enabled","acl"])
 
         # Hide Created Models
         temp = model._model().getAsClass(query={ "name" : "occurrence clean" })
@@ -122,6 +128,36 @@ class _occurrence(plugin._plugin):
         return True
 
     def upgrade(self,LatestPluginVersion):
+        if self.version < 3.1:
+            temp = conduct._conduct().getAsClass(query={"name" : "occurrenceCore"  })
+            if len(temp) == 1:
+                temp = temp[0]
+                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
+                temp.flow[0]["next"] = [{"flowID": temp.flow[1]["flowID"], "logic": True }]
+                temp.update(["flow","acl"])
+                webui._modelUI().new(temp._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },temp.flow[0]["flowID"],0,0,"")
+                webui._modelUI().new(temp._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },temp.flow[1]["flowID"],250,0,"")
+            temp = model._model().getAsClass(query={ "name" : "occurrence clean" })
+            if len(temp) == 1:
+                temp = temp[0]
+                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
+                temp.update(["acl"])
+            temp = model._model().getAsClass(query={ "name" : "occurrence raise" })
+            if len(temp) == 1:
+                temp = temp[0]
+                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
+                temp.update(["acl"])
+            temp = model._model().getAsClass(query={ "name" : "occurrence update" })
+            if len(temp) == 1:
+                temp = temp[0]
+                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
+                temp.update(["acl"])
+            temp = model._model().getAsClass(query={ "name" : "occurrence clear" })
+            if len(temp) == 1:
+                temp = temp[0]
+                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
+                temp.update(["acl"])
+
         # Hiding object types
         if self.version < 2:
             temp = model._model().getAsClass(query={ "name" : "occurrence clean" })
@@ -144,4 +180,6 @@ class _occurrence(plugin._plugin):
                 temp = temp[0]
                 temp.hidden = True
                 temp.update(["hidden"])
+
+        return True
     
