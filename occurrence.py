@@ -74,8 +74,8 @@ class _occurrence(plugin._plugin):
                 "next" : []
             }
         ]
-        webui._modelUI.new(c._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },flowTriggerID,0,0,"")
-        webui._modelUI.new(c._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },flowActionID,100,0,"")
+        webui._modelUI().new(c._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },flowTriggerID,0,0,"")
+        webui._modelUI().new(c._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },flowActionID,100,0,"")
 
         c.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
         c.enabled = True
