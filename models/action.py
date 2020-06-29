@@ -25,6 +25,7 @@ class _occurrence(action._action):
         self.updateOccurrenceCache = None
         self.conductsCache = None
         cache.globalCache.newCache("occurrenceCache",maxSize=104857600)
+        cache.globalCache.newCache("occurrenceCacheMatch",maxSize=104857600)
 
     def new(self, name):
         # no longer create occurrence triggers result codes should be used instead!
@@ -52,7 +53,7 @@ class _occurrence(action._action):
         match = text
         # NEED TO UPDATE / INSERT, on all matches at once to reduce looping and database load, this needs to be more effenit
         # Check for existing occurrence matches
-        foundOccurrences = cache.globalCache.get("occurrenceCache",match,getOccurrenceObject,extendCacheTime=True)
+        foundOccurrences = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject)
         if not foundOccurrences:
             # Raising new occurrence
             newOccurrence = occurrence._occurrence().new(self,match,helpers.unicodeEscapeDict(data))
@@ -249,4 +250,12 @@ class _occurrenceClean(action._action):
 
 
 def getOccurrenceObject(match,sessionData):
-    return occurrence._occurrence().getAsClass(query={"match" : match })
+    foundOccurrences = cache.globalCache.get("occurrenceCache",match,getOccurrenceObject)
+    results = []
+    for foundOccurrence in foundOccurrences:
+        if foundOccurrence.match == match:
+            results.append(foundOccurrence)
+    return results
+
+def getOccurrenceObjects(match,sessionData):
+    return occurrence._occurrence().getAsClass(query={})
