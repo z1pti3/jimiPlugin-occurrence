@@ -250,7 +250,7 @@ class _occurrenceClean(action._action):
 
 
 def getOccurrenceObject(match,sessionData):
-    foundOccurrences = cache.globalCache.get("occurrenceCache",match,getOccurrenceObject)
+    foundOccurrences = cache.globalCache.get("occurrenceCache",match,getOccurrenceObjects)
     results = []
     for foundOccurrence in foundOccurrences:
         if foundOccurrence.match == match:
