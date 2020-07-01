@@ -58,6 +58,7 @@ class _occurrence(action._action):
             # Raising new occurrence
             newOccurrence = occurrence._occurrence().new(self,match,helpers.unicodeEscapeDict(data))
             if newOccurrence:
+                foundOccurrences = cache.globalCache.get("occurrenceCache",match,getOccurrenceObjects,forceUpdate=True)
                 self.notifyConducts("raise",data)
                 logging.debug("Occurrence Created, occurrenceID='{0}' actionID='{1}'".format(newOccurrence.inserted_id,self._id),7)
                 actionResult["result"] = True
