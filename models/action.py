@@ -15,106 +15,52 @@ class _occurrence(action._action):
     occurrenceMatchString = str()
     lullTime = int()
     lullTimeExpiredCount = int()
-    raiseOccurrenceTriggerID = str()
-    updateOccurrenceTriggerID = str()
-    clearOccurrenceTriggerID = str()
 
     def __init__(self):
         # Used to cahce object loads and reduce database requests ( set to none some schema excludes them )
-        self.raiseOccurrenceCache = None
-        self.updateOccurrenceCache = None
-        self.conductsCache = None
         cache.globalCache.newCache("occurrenceCache",maxSize=104857600)
+        cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
         cache.globalCache.newCache("occurrenceCacheMatch",maxSize=104857600)
-
-    def new(self, name):
-        # no longer create occurrence triggers result codes should be used instead!
-        #self.raiseOccurrenceTriggerID = str(occurrenceTrigger._raiseOccurrence().new("{0} - raise".format(name)).inserted_id)
-        #self.updateOccurrenceTriggerID = str(occurrenceTrigger._updateOccurrence().new("{0} - update".format(name)).inserted_id)
-        #self.clearOccurrenceTriggerID = str(occurrenceTrigger._clearOccurrence().new("{0} - clear".format(name)).inserted_id)
-        return super(_occurrence, self).new(name)
+        self.cpuSaver = helpers.cpuSaver()
 
     def run(self,data,persistentData,actionResult):
+        # force CPU down as this action can afford to take a few seconds 1 sec delay per 1000 events
+        self.cpuSaver.tick(runAfter=100,sleepFor=0.1)
         # Is this a clear event passed by the occurrence clear notifier?
         if "clearOccurrence" in data:
             actionResult["result"] = True
             actionResult["rc"] = 205
             return actionResult
 
-        text = self._id
-        if len(self.occurrenceMatchString) > 0:
-            valueMatches = re.finditer(r'((\"(.*?[^\\])\"|([a-zA-Z0-9]+(\[(.*?)\])+)|([a-zA-Z0-9]+(\((.*?)(\)\)|\)))+)))',self.occurrenceMatchString)
-            for index, valueMatch in enumerate(valueMatches, start=1):
-                text += str(helpers.typeCast(valueMatch.group(1).strip(),{"data" : data},{}))
-        else:
-            for field in self.eventFieldGroup:
-                if field in data["event"]:
-                    text += str(data["event"][field])
-        match = text
-        # NEED TO UPDATE / INSERT, on all matches at once to reduce looping and database load, this needs to be more effenit
+        match = "{0}-{1}".format(self._id,helpers.evalString(self.occurrenceMatchString,{ "data" : data }))
         # Check for existing occurrence matches
-        foundOccurrences = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject)
-        if not foundOccurrences:
-            # Raising new occurrence
-            newOccurrence = occurrence._occurrence().new(self,match,helpers.unicodeEscapeDict(data))
-            if newOccurrence:
-                foundOccurrences = cache.globalCache.get("occurrenceCache",match,getOccurrenceObjects,forceUpdate=True)
-                self.notifyConducts("raise",data)
-                logging.debug("Occurrence Created, occurrenceID='{0}' actionID='{1}'".format(newOccurrence.inserted_id,self._id),7)
-                actionResult["result"] = True
-                actionResult["rc"] = 201
-                return actionResult
-            else:
-                actionResult["result"] = False
-                actionResult["rc"] = 500
-                return actionResult
+        foundOccurrence = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject,dontCheck=True)
+        if foundOccurrence == None:
+            # Raising new occurrence and assuming the database took the object as expected
+            newOccurrence = occurrence._occurrence().asyncNew(self,match,helpers.unicodeEscapeDict(data),self.acl)
+            cache.globalCache.insert("occurrenceCacheMatch",match,newOccurrence)
+            logging.debug("Occurrence Created async, actionID='{0}'".format(self._id),7)
+            actionResult["result"] = True
+            actionResult["rc"] = 201
+            return actionResult
         else:
-            # Updating existing occurrences
-            for foundOccurrence in foundOccurrences:
+            if foundOccurrence._id != "":
+                # Updating existing occurrences
                 foundOccurrence.lastOccurrenceTime = int(time.time())
                 foundOccurrence.lullTime = (foundOccurrence.lastOccurrenceTime + self.lullTime)
                 foundOccurrence.lullTimeExpired = self.lullTimeExpiredCount
-                foundOccurrence.update(["lastOccurrenceTime","lullTime","lullTimeExpired"])
-                data["occurrenceData"] = foundOccurrence.data
-                self.notifyConducts("update",data)
+                foundOccurrence.asyncUpdate(["lastOccurrenceTime","lullTime","lullTimeExpired"])
+                actionResult["data"]["occurrenceData"] = foundOccurrence.data
                 logging.debug("Occurrence Updated, occurrenceID='{0}' actionID='{1}'".format(foundOccurrence._id,self._id),7)
                 actionResult["result"] = True
                 actionResult["rc"] = 302
                 return actionResult
+            else:
+                logging.debug("Occurrence Update Failed - NO ID, actionID='{0}'".format(self._id),7)
+                actionResult["result"] = False
+                actionResult["rc"] = 500
+                return actionResult
                     
-
-    def notifyConducts(self,occurrenceTriggerType,data):
-        # Old methord which fails when using new methord
-        try:
-            # Following simular speed and caching as scheduler loop
-            
-            triggerClass = None
-            
-            if occurrenceTriggerType == "raise":
-                if not self.raiseOccurrenceCache:
-                    self.raiseOccurrenceCache = occurrenceTrigger._raiseOccurrence().load(self.raiseOccurrenceTriggerID).parse(hidden=True)
-                triggerClass = self.raiseOccurrenceCache
-            elif occurrenceTriggerType == "update":
-                if not self.updateOccurrenceCache:
-                    self.updateOccurrenceCache = occurrenceTrigger._updateOccurrence().load(self.updateOccurrenceTriggerID).parse(hidden=True)
-                triggerClass = self.updateOccurrenceCache
-            
-            if triggerClass != None:
-                if triggerClass["enabled"]:
-                    #data["triggerID"] = triggerClass["_id"]
-                    if not self.conductsCache:
-                        self.conductsCache = []
-                        conducts = conduct._conduct().query(query={"flow.triggerID" : triggerClass["_id"], "enabled" : True})["results"]
-                        for conduct_ in conducts:
-                            # Dynamic loading for classType model
-                            _class = model._model().get(conduct_["classID"]).classObject()
-                            if _class:
-                                self.conductsCache.append(_class().load(conduct_["_id"]))
-                    for conduct_ in self.conductsCache:
-                        conduct_.triggerHandler(triggerClass["_id"],data)
-        except:
-            pass
-
 class _occurrenceClean(action._action):
 
     def run(self,data,persistentData,actionResult):
@@ -149,37 +95,9 @@ class _occurrenceClean(action._action):
                     conducts = conduct._conduct().query(query={"flow.actionID" : tempOccurrence._id, "enabled" : True})["results"]
                     foundOccurrenceCache[foundOccurrence["occurrenceActionID"]]["exitCodeMode"] = { "actionID": tempOccurrence._id, "conducts" : conducts }
 
-                
-
-            conducts = foundOccurrenceCache[foundOccurrence["occurrenceActionID"]]["conducts"]
-            data = { "triggerID" : "", "var" : {}, "event" : {} }
-            # If occurrence contains the orgnial data var and event then apply it to the data passsed to clear
-            if "data" in foundOccurrence:
-                data["event"] = foundOccurrence["data"]["event"]
-                data["var"] = foundOccurrence["data"]["var"]
-            data["triggerID"] = foundOccurrenceCache[foundOccurrence["occurrenceActionID"]]["triggerID"]
-            for conduct_ in conducts:
-                loadedConduct = None
-                if conduct_["classID"] not in conductsCache:
-                    # Dynamic loading for classType model
-                    _class = model._model().get(conduct_["classID"]).classObject()
-                    if _class:
-                        loadedConduct = _class().load(conduct_["_id"])
-                        conductsCache[conduct_["classID"]] = loadedConduct           
-                    else:
-                        logging.debug("Cannot locate occurrence by ID, occurrenceID='{0}'".format(occurrenceID),6)
-                else:
-                    loadedConduct = conductsCache[conduct_["classID"]]
-
-                if loadedConduct:
-                    try:
-                        loadedConduct.triggerHandler(triggerClass["_id"],data)
-                    except:
-                        pass # Error handling is needed here
-
             # New exit code version
             conducts = foundOccurrenceCache[foundOccurrence["occurrenceActionID"]]["exitCodeMode"]["conducts"]
-            data = { "triggerID" : "", "clearOccurrence" : True, "var" : {}, "event" : {} }
+            data = { "triggerID" : tempOccurrence._id, "clearOccurrence" : True, "var" : {}, "event" : {} }
             # If occurrence contains the orgnial data var and event then apply it to the data passsed to clear
             if "data" in foundOccurrence:
                 data["event"] = foundOccurrence["data"]["event"]
@@ -199,8 +117,8 @@ class _occurrenceClean(action._action):
 
                 if loadedConduct:
                     try:
-                        loadedConduct.triggerHandler(tempOccurrence._id,data,True)
-                    except:
+                        loadedConduct.triggerHandler(tempOccurrence._id,data,actionIDType=True)
+                    except Exception as e:
                         pass # Error handling is needed here
 
         # Deleting expired occurrences
@@ -249,14 +167,17 @@ class _occurrenceClean(action._action):
         actionResult["rc"] = 0
         return actionResult
 
-
 def getOccurrenceObject(match,sessionData):
-    foundOccurrences = cache.globalCache.get("occurrenceCache",match,getOccurrenceObjects)
-    results = []
-    for foundOccurrence in foundOccurrences:
-        if foundOccurrence.match == match:
-            results.append(foundOccurrence)
-    return results
+    foundOccurrences = cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
+    if foundOccurrences:
+        if match in foundOccurrences:
+            return foundOccurrences[match]
+    return None
 
 def getOccurrenceObjects(match,sessionData):
-    return occurrence._occurrence().getAsClass(query={})
+    foundOccurrences = occurrence._occurrence().getAsClass(query={},fields=["lastOccurrenceTime","lullTime","lullTimeExpired","match","data"])
+    result = {}
+    for foundOccurrence in foundOccurrences:
+        result[foundOccurrence.match] = foundOccurrence
+        cache.globalCache.insert("occurrenceCacheMatch",foundOccurrence.match,foundOccurrence)
+    return result
