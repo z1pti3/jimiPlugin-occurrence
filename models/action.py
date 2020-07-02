@@ -21,22 +21,21 @@ class _occurrence(action._action):
         cache.globalCache.newCache("occurrenceCache",maxSize=104857600)
         cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
         cache.globalCache.newCache("occurrenceCacheMatch",maxSize=104857600)
-        self.cpuSaver = helpers.cpuSaver()
         self.bulkClass = db._bulk()
 
     def run(self,data,persistentData,actionResult):
-        # force CPU down as this action can afford to take a few seconds 1 sec delay per 1000 events
-        self.cpuSaver.tick(runAfter=100,sleepFor=0.1)
-        self.bulkClass.tick()
         # Is this a clear event passed by the occurrence clear notifier?
         if "clearOccurrence" in data:
             actionResult["result"] = True
             actionResult["rc"] = 205
             return actionResult
 
+        if data["eventStats"]["last"]:
+            self.bulkClass.bulkOperatonProcessing()
+
         match = "{0}-{1}".format(self._id,helpers.evalString(self.occurrenceMatchString,{ "data" : data }))
         # Check for existing occurrence matches
-        foundOccurrence = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject,dontCheck=True,bulkProcess=self.bulkClass.bulkOperatonProcessing)
+        foundOccurrence = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject,customCacheTime=self.lullTime,dontCheck=True)
         if foundOccurrence == None:
             # Raising new occurrence and assuming the database took the object as expected
             newOccurrence = occurrence._occurrence().bulkNew(self,match,helpers.unicodeEscapeDict(data),self.acl,self.bulkClass)
@@ -119,6 +118,7 @@ class _occurrenceClean(action._action):
 
                 if loadedConduct:
                     try:
+                        cache.globalCache.delete("occurrenceCacheMatch",foundOccurrence["match"])
                         loadedConduct.triggerHandler(tempOccurrence._id,data,actionIDType=True)
                     except Exception as e:
                         pass # Error handling is needed here
@@ -170,10 +170,6 @@ class _occurrenceClean(action._action):
         return actionResult
 
 def getOccurrenceObject(match,sessionData):
-    foundOccurrences = cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
-    if foundOccurrences:
-        if match in foundOccurrences:
-            return foundOccurrences[match]
     return None
 
 def getOccurrenceObjects(match,sessionData):
