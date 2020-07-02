@@ -23,7 +23,7 @@ class _occurrence(db._document):
 
     _dbCollection = db.db[dbCollectionName]
 
-    def asyncNew(self,occurrenceObj,match,data,acl):
+    def bulkNew(self,occurrenceObj,match,data,acl,bulkClass):
         self.acl = acl
         self.name = occurrenceObj.name
         self.match = match
@@ -43,7 +43,7 @@ class _occurrence(db._document):
             return None
         self.data = data
         self.lastLullCheck = int(time.time())
-        return super(_occurrence, self).asyncNew() 
+        return super(_occurrence, self).bulkNew(bulkClass) 
 
 # Locates occurrences by match field
 def findOccurrences(match):

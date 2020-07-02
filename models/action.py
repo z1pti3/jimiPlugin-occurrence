@@ -22,10 +22,12 @@ class _occurrence(action._action):
         cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
         cache.globalCache.newCache("occurrenceCacheMatch",maxSize=104857600)
         self.cpuSaver = helpers.cpuSaver()
+        self.bulkClass = db._bulk()
 
     def run(self,data,persistentData,actionResult):
         # force CPU down as this action can afford to take a few seconds 1 sec delay per 1000 events
         self.cpuSaver.tick(runAfter=100,sleepFor=0.1)
+        self.bulkClass.tick()
         # Is this a clear event passed by the occurrence clear notifier?
         if "clearOccurrence" in data:
             actionResult["result"] = True
@@ -37,7 +39,7 @@ class _occurrence(action._action):
         foundOccurrence = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject,dontCheck=True)
         if foundOccurrence == None:
             # Raising new occurrence and assuming the database took the object as expected
-            newOccurrence = occurrence._occurrence().asyncNew(self,match,helpers.unicodeEscapeDict(data),self.acl)
+            newOccurrence = occurrence._occurrence().bulkNew(self,match,helpers.unicodeEscapeDict(data),self.acl,self.bulkClass)
             cache.globalCache.insert("occurrenceCacheMatch",match,newOccurrence)
             logging.debug("Occurrence Created async, actionID='{0}'".format(self._id),7)
             actionResult["result"] = True
@@ -49,7 +51,7 @@ class _occurrence(action._action):
                 foundOccurrence.lastOccurrenceTime = int(time.time())
                 foundOccurrence.lullTime = (foundOccurrence.lastOccurrenceTime + self.lullTime)
                 foundOccurrence.lullTimeExpired = self.lullTimeExpiredCount
-                foundOccurrence.asyncUpdate(["lastOccurrenceTime","lullTime","lullTimeExpired"])
+                foundOccurrence.bulkUpdate(["lastOccurrenceTime","lullTime","lullTimeExpired"],self.bulkClass)
                 actionResult["data"]["occurrenceData"] = foundOccurrence.data
                 logging.debug("Occurrence Updated, occurrenceID='{0}' actionID='{1}'".format(foundOccurrence._id,self._id),7)
                 actionResult["result"] = True
