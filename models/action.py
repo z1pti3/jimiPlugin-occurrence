@@ -11,7 +11,6 @@ from plugins.occurrence.models import trigger as occurrenceTrigger
 # Needs to be updated so that objects are cahced and then mass updated into the database on class __del__
 
 class _occurrence(action._action):
-    eventFieldGroup = list()
     occurrenceMatchString = str()
     lullTime = int()
     lullTimeExpiredCount = int()
