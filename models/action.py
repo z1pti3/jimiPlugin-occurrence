@@ -17,9 +17,9 @@ class _occurrence(action._action):
 
     def __init__(self):
         # Used to cahce object loads and reduce database requests ( set to none some schema excludes them )
-        cache.globalCache.newCache("occurrenceCache",maxSize=104857600)
+        cache.globalCache.newCache("occurrenceCache",maxSize=10485760)
+        cache.globalCache.newCache("occurrenceCacheMatch",maxSize=10485760)
         cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
-        cache.globalCache.newCache("occurrenceCacheMatch",maxSize=104857600)
         self.bulkClass = db._bulk()
 
     def run(self,data,persistentData,actionResult):
@@ -34,7 +34,7 @@ class _occurrence(action._action):
 
         match = "{0}-{1}".format(self._id,helpers.evalString(self.occurrenceMatchString,{ "data" : data }))
         # Check for existing occurrence matches
-        foundOccurrence = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject,customCacheTime=self.lullTime,dontCheck=True)
+        foundOccurrence = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject,customCacheTime=self.lullTime,nullUpdate=True)
         if foundOccurrence == None:
             # Raising new occurrence and assuming the database took the object as expected
             newOccurrence = occurrence._occurrence().bulkNew(self,match,helpers.unicodeEscapeDict(data),self.acl,self.bulkClass)
@@ -169,6 +169,10 @@ class _occurrenceClean(action._action):
         return actionResult
 
 def getOccurrenceObject(match,sessionData):
+    foundOccurrences = cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
+    if foundOccurrences:
+        if match in foundOccurrences:
+            return foundOccurrences[match]
     return None
 
 def getOccurrenceObjects(match,sessionData):
