@@ -179,7 +179,8 @@ def getOccurrenceObject(match,sessionData):
 def getOccurrenceObjects(match,sessionData):
     foundOccurrences = occurrence._occurrence().getAsClass(query={},fields=["lastOccurrenceTime","lullTime","lullTimeExpired","match","data"])
     result = {}
-    for foundOccurrence in foundOccurrences:
-        result[foundOccurrence.match] = foundOccurrence
-        cache.globalCache.insert("occurrenceCacheMatch",foundOccurrence.match,foundOccurrence)
+    if foundOccurrences:
+        for foundOccurrence in foundOccurrences:
+            result[foundOccurrence.match] = foundOccurrence
+            cache.globalCache.insert("occurrenceCacheMatch",foundOccurrence.match,foundOccurrence)
     return result
