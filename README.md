@@ -4,11 +4,17 @@ Enables alarm like functionality whereby it is possible for uniquue occurrences 
 
 Occurrence supports 3 flow modes after the object hsa been placed:
 1. Raise - A new occurence has been seen
-`data[action][rc] == 201`
+```
+data[action][rc] == 201
+```
 2. Update - A existing occurrence will be updated and time extended
-`data[action][rc] == 302`
+```
+data[action][rc] == 302
+```
 3. Clear - A occurrence has expired and is now cleared
-`data[action][rc] == 205`
+```
+data[action][rc] == 205
+```
 
 The RC codes shown above should be used within login in a jimiFlow to determine what parts of your flow should run in relation to the above outputs.
 
