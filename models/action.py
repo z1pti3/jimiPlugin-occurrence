@@ -36,7 +36,7 @@ class _occurrence(action._action):
 
         match = "{0}-{1}".format(self._id,helpers.evalString(self.occurrenceMatchString,{ "data" : data }))
         # Check for existing occurrence matches
-        foundOccurrence = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject,dontCheck=True)
+        foundOccurrence = cache.globalCache.get("occurrenceCacheMatch",match,getOccurrenceObject,dontCheck=True,bulkProcess=self.bulkClass.bulkOperatonProcessing)
         if foundOccurrence == None:
             # Raising new occurrence and assuming the database took the object as expected
             newOccurrence = occurrence._occurrence().bulkNew(self,match,helpers.unicodeEscapeDict(data),self.acl,self.bulkClass)
