@@ -22,15 +22,15 @@ class _occurrence(action._action):
         cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
         self.bulkClass = db._bulk()
 
+    def postRun(self):
+        self.bulkClass.bulkOperatonProcessing()
+
     def run(self,data,persistentData,actionResult):
         # Is this a clear event passed by the occurrence clear notifier?
         if "clearOccurrence" in data:
             actionResult["result"] = True
             actionResult["rc"] = 205
             return actionResult
-
-        if data["eventStats"]["last"]:
-            self.bulkClass.bulkOperatonProcessing()
 
         match = "{0}-{1}".format(self._id,helpers.evalString(self.occurrenceMatchString,{ "data" : data }))
         # Check for existing occurrence matches
