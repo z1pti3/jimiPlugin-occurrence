@@ -9,13 +9,15 @@
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/datatable.css') }}">
 
+<link rel="stylesheet" href="{{ url_for('static', filename='themes/default/default.css') }}">
+
 <html>
     <head>
         
     </head>
-    <body>
-        <table id="orderTable" class="table table-striped table-bordered table-sm" cellspacing="0" width="100%">
-            <thead>
+    <body class="theme-panelContainer">
+        <table id="orderTable" class="table table-sm theme-table" cellspacing="0" width="100%">
+            <thead class="theme-tableHeader">
                 <tr>
                     <th class="th-sm">_id</th>
                     <th class="th-sm">occurrenceTime</th>
@@ -29,7 +31,7 @@
                     <th class="th-sm">data</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="theme-tableBody">
                 {% for occurrence in occurrences %}
                     <tr>
                         <td>{{ occurrence['_id'] }}</td>
@@ -54,10 +56,12 @@
 <script>
     $(document).ready(function () {
         $('#orderTable').DataTable({
+            "stripeClasses" : [ 'theme-tableRowOdd', 'theme-tableRowEven' ],
             "paging" : false
         });
         $('.dataTables_length').addClass('bs-select');
         $('.dataTables_filter input[type="search"]').css({'width':'200px'});
+        $('.dataTables_filter input[type="search"]').addClass("theme-panelTextbox")
     });
 
     $('#orderTable').on('click', '.clearOccurence', function(e){
