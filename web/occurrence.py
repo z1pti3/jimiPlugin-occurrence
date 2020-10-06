@@ -4,13 +4,14 @@ from flask import current_app as app
 from pathlib import Path
 import time
 
+from core import api
 from plugins.occurrence.models import occurrence
 
 pluginPages = Blueprint('occurrencePages', __name__, template_folder="templates")
 
 @pluginPages.route("/occurrence/")
 def mainPage():
-    foundOccurrences = occurrence._occurrence().query()["results"]
+    foundOccurrences = occurrence._occurrence().query(sessionData=api.g.sessionData)["results"]
     occurrences = []
     for foundOccurrence in foundOccurrences:
         o = {"_id" : "", "name" : "", "match" : "", "triggerID" : "", "occurrenceActionID" : "", "lastLullCheck" : 0, "occurrenceTime" : 0,  "lastOccurrenceTime" : 0, "data" : {}}
@@ -39,5 +40,9 @@ def mainPage():
 
 @pluginPages.route("/occurrence/<occurrenceID>/clear/")
 def clearOccurrence(occurrenceID):
-    occurrence._occurrence().api_delete(id=occurrenceID)
-    return {}, 200
+    foundOccurence =  occurrence._occurrence().query(sessionData=api.g.sessionData,id=occurrenceID)["results"]
+    if len(foundOccurence) == 1:
+        occurrence._occurrence().api_delete(id=occurrenceID)
+        return {}, 200
+    else:
+        return (), 404
