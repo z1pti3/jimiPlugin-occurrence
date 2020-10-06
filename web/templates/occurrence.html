@@ -42,6 +42,7 @@
                         <td>{{ occurrence['lullTimeExpired'] }}</td>
                         <td>{{ occurrence['match'] }}</td>
                         <td>{{ occurrence['data'] }}</td>
+                        <td> <a href="{{ occurrence['_id'] }}/clear/">Clear</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

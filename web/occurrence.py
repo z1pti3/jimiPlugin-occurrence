@@ -37,3 +37,7 @@ def mainPage():
         occurrences.append(o)
     return render_template("occurrence.html", occurrences=occurrences)
 
+@pluginPages.route("/occurrence/<occurrenceID>/clear/")
+def clearOccurrence(occurrenceID):
+    occurrence._occurrence().api_delete(id=occurrenceID)
+    return {}, 200
