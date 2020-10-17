@@ -6,7 +6,7 @@ from core.models import conduct, trigger, webui
 from plugins.occurrence.models import action
 
 class _occurrence(plugin._plugin):
-    version = 3.1
+    version = 4.0
 
     def install(self):
         # Register models
