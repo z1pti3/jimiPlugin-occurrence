@@ -74,29 +74,15 @@ class _occurrenceClean(action._action):
             # Adding IDs of found occurrences to the delete list as they are now cleared
             foundOccurrencesIDs.append(db.ObjectId(foundOccurrence["_id"]))
             # Notifiying clears
-            if foundOccurrence["occurrenceActionID"] not in foundOccurrenceCache:
-                # Old methord now fails when using new methord
+            if foundOccurrence["occurrenceFlowID"] not in foundOccurrenceCache:
                 tempOccurrence = _occurrence().load(foundOccurrence["occurrenceActionID"])
-                try:
-                    triggerClass = occurrenceTrigger._clearOccurrence().load(tempOccurrence.clearOccurrenceTriggerID).parse(hidden=True)
-                    
-                    # Checking if clear trigger is enabled
-                    if triggerClass["enabled"]:
-                        conducts = conduct._conduct().query(query={"flow.triggerID" : triggerClass["_id"], "enabled" : True})["results"]
-                        foundOccurrenceCache[foundOccurrence["occurrenceActionID"]] = { "triggerID": triggerClass["_id"], "conducts" : conducts }
-                    else:
-                        # Save blank list of conducts if the clear tigger is disabled
-                        foundOccurrenceCache[foundOccurrence["occurrenceActionID"]] = { "triggerID": triggerClass["_id"], "conducts" : [] }
-                except:
-                     foundOccurrenceCache[foundOccurrence["occurrenceActionID"]] = { "triggerID": None, "conducts" : [] }
+                foundOccurrenceCache[foundOccurrence["occurrenceFlowID"]] = { "triggerID": None, "conducts" : [] }
 
-                # New exit code version
                 if tempOccurrence.enabled:
-                    conducts = conduct._conduct().query(query={"flow.actionID" : tempOccurrence._id, "enabled" : True})["results"]
-                    foundOccurrenceCache[foundOccurrence["occurrenceActionID"]]["exitCodeMode"] = { "actionID": tempOccurrence._id, "conducts" : conducts }
+                    conducts = conduct._conduct().query(query={"flow.actionID" : tempOccurrence._id, "flow.flowID" : foundOccurrence["occurrenceFlowID"],  "enabled" : True})["results"]
+                    foundOccurrenceCache[foundOccurrence["occurrenceFlowID"]]["exitCodeMode"] = { "actionID": tempOccurrence._id, "conducts" : conducts }
 
-            # New exit code version
-            conducts = foundOccurrenceCache[foundOccurrence["occurrenceActionID"]]["exitCodeMode"]["conducts"]
+            conducts = foundOccurrenceCache[foundOccurrence["occurrenceFlowID"]]["exitCodeMode"]["conducts"]
             data = { "triggerID" : tempOccurrence._id, "clearOccurrence" : True, "var" : {}, "event" : {} }
             # If occurrence contains the orgnial data var and event then apply it to the data passsed to clear
             if "data" in foundOccurrence:
@@ -118,7 +104,7 @@ class _occurrenceClean(action._action):
                 if loadedConduct:
                     try:
                         cache.globalCache.delete("occurrenceCacheMatch",foundOccurrence["match"])
-                        loadedConduct.triggerHandler(tempOccurrence._id,data,actionIDType=True)
+                        loadedConduct.triggerHandler(foundOccurrence["occurrenceFlowID"],data,flowIDType=True)
                     except Exception as e:
                         pass # Error handling is needed here
 

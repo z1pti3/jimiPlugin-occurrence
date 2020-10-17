@@ -16,6 +16,7 @@ class _occurrence(db._document):
     occurrenceTime = int()
     lastOccurrenceTime = int()
     occurrenceActionID = str()
+    occurrenceFlowID = str()
     lullTimeExpired = int()
     lastLullCheck = int()
     triggerID = str()
@@ -30,6 +31,7 @@ class _occurrence(db._document):
         self.occurrenceTime = int(time.time())
         self.lullTime = (self.occurrenceTime + occurrenceObj.lullTime)
         self.occurrenceActionID = occurrenceObj._id
+        self.occurrenceFlowID = data["flowID"]
         self.lullTimeExpired = occurrenceObj.lullTimeExpiredCount
         if "callingTriggerID" in data:
             if data["callingTriggerID"] != "":
