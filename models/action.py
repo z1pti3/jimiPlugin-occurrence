@@ -14,6 +14,7 @@ class _occurrence(action._action):
     occurrenceMatchString = str()
     lullTime = int()
     lullTimeExpiredCount = int()
+    dbSlowUpdate = bool()
 
     def __init__(self):
         # Used to cahce object loads and reduce database requests ( set to none some schema excludes them )
@@ -45,6 +46,11 @@ class _occurrence(action._action):
             return actionResult
         else:
             if foundOccurrence._id != "":
+                # Checking if we should only update db when less than half lullTime is left ( reduced db load )
+                if self.dbSlowUpdate and (int(time.time()) - foundOccurrence.lastOccurrenceTime) < self.lullTime/2:
+                    actionResult["result"] = True
+                    actionResult["rc"] = 302
+                    return actionResult
                 # Updating existing occurrences
                 foundOccurrence.lastOccurrenceTime = int(time.time())
                 foundOccurrence.lullTime = (foundOccurrence.lastOccurrenceTime + self.lullTime)
