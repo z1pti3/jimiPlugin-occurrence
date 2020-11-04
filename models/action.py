@@ -23,7 +23,7 @@ class _occurrence(action._action):
         cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
         self.bulkClass = db._bulk()
 
-    def postRun(self,data,persistentData):
+    def postRun(self):
         self.bulkClass.bulkOperatonProcessing()
 
     def run(self,data,persistentData,actionResult):
