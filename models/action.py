@@ -89,7 +89,9 @@ class _occurrenceClean(action._action):
                     foundOccurrenceCache[foundOccurrence["occurrenceFlowID"]]["exitCodeMode"] = { "actionID": tempOccurrence._id, "conducts" : conducts }
 
             conducts = foundOccurrenceCache[foundOccurrence["occurrenceFlowID"]]["exitCodeMode"]["conducts"]
-            data = { "triggerID" : tempOccurrence._id, "clearOccurrence" : True, "var" : {}, "event" : {} }
+            data = conduct.flowDataTemplate()
+            data["triggerID"] =  tempOccurrence._id
+            data["clearOccurrence"] = True
             # If occurrence contains the orgnial data var and event then apply it to the data passsed to clear
             if "data" in foundOccurrence:
                 data["event"] = foundOccurrence["data"]["event"]
@@ -103,14 +105,17 @@ class _occurrenceClean(action._action):
                         loadedConduct = _class().load(conduct_["_id"])
                         conductsCache[conduct_["classID"]] = loadedConduct           
                     else:
-                        logging.debug("Cannot locate occurrence by ID, occurrenceID='{0}'".format(occurrenceID),6)
+                        logging.debug("Cannot locate occurrence by ID, occurrenceID='{0}'".format(foundOccurrence["occurrenceFlowID"]),6)
                 else:
                     loadedConduct = conductsCache[conduct_["classID"]]
 
                 if loadedConduct:
                     try:
                         cache.globalCache.delete("occurrenceCacheMatch",foundOccurrence["match"])
-                        loadedConduct.triggerHandler(foundOccurrence["occurrenceFlowID"],data,flowIDType=True)
+                        eventStat = { "first" : True, "current" : 0, "total" : 1, "last" : True }
+                        tempData = conduct.copyFlowData(data)
+                        tempData["eventStats"] = eventStat
+                        loadedConduct.triggerHandler(foundOccurrence["occurrenceFlowID"],tempData,flowIDType=True)
                     except Exception as e:
                         pass # Error handling is needed here
 
