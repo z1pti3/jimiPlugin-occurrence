@@ -32,6 +32,11 @@ class _occurrence(action._action):
             actionResult["result"] = True
             actionResult["rc"] = 205
             return actionResult
+        elif "000000000001010000000000" in self._id:
+            actionResult["result"] = True
+            actionResult["rc"] = 201
+            actionResult["msg"] = "Occurrence ran within codify, always results in 201 created"
+            return actionResult
 
         match = "{0}-{1}".format(self._id,helpers.evalString(self.occurrenceMatchString,{ "data" : data }))
         # Check for existing occurrence matches
