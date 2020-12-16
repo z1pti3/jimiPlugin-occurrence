@@ -32,7 +32,7 @@ class _occurrence(action._action):
             actionResult["result"] = True
             actionResult["rc"] = 205
             return actionResult
-        elif "000000000001010000000000" in self._id:
+        elif "000000000001010000000000" in str(self._id):
             actionResult["result"] = True
             actionResult["rc"] = 201
             actionResult["msg"] = "Occurrence ran within codify, always results in 201 created"
