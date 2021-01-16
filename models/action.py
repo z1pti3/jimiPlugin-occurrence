@@ -48,6 +48,12 @@ class _occurrence(action._action):
             logging.debug("Occurrence Created async, actionID='{0}'".format(self._id),7)
             actionResult["result"] = True
             actionResult["rc"] = 201
+            try:
+                persistentData["plugin"]["occurrence"].append(newOccurrence)
+            except:
+                persistentData["plugin"]["occurrence"] = [newOccurrence]
+            arrayIndex = len(persistentData["plugin"]["occurrence"])-1
+            actionResult["occurrenceIndex"] = arrayIndex
             return actionResult
         else:
             if foundOccurrence._id != "":
@@ -65,12 +71,42 @@ class _occurrence(action._action):
                 logging.debug("Occurrence Updated, occurrenceID='{0}' actionID='{1}'".format(foundOccurrence._id,self._id),7)
                 actionResult["result"] = True
                 actionResult["rc"] = 302
+                try:
+                    persistentData["plugin"]["occurrence"].append(foundOccurrence)
+                except:
+                    persistentData["plugin"]["occurrence"] = [foundOccurrence]
+                arrayIndex = len(persistentData["plugin"]["occurrence"])-1
+                actionResult["occurrenceIndex"] = arrayIndex
                 return actionResult
             else:
                 logging.debug("Occurrence Update Failed - NO ID, actionID='{0}'".format(self._id),7)
                 actionResult["result"] = False
                 actionResult["rc"] = 500
                 return actionResult
+
+class _occurrenceUpdate(action._action):
+    occurrenceVarData = dict()
+    occurrenceIndex = str()
+    updateMode = int()
+
+    def run(self,data,persistentData,actionResult):
+        occurrenceIndex = helpers.evalString(self.occurrenceIndex,{"data" : data})
+        occurrenceVarData = helpers.evalDict(self.occurrenceVarData,{"data" : data})
+        try:
+            currentOccurrence = persistentData["plugin"]["occurrence"][occurrenceIndex]
+            if self.updateMode == 0:
+                for key, value in occurrenceVarData.items():
+                    currentOccurrence.data["var"][key] = value
+            elif self.updateMode == 1:
+                currentOccurrence.data["var"] = occurrenceVarData
+            currentOccurrence.update(["data"])
+            actionResult["result"] = True
+            actionResult["rc"] = 0
+        except KeyError:
+            actionResult["result"] = False
+            actionResult["rc"] = 404
+            actionResult["msg"] = "No occurrence found within current flow"
+        return actionResult
                     
 class _occurrenceClean(action._action):
 

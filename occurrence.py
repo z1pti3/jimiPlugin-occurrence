@@ -6,7 +6,7 @@ from core.models import conduct, trigger, webui
 from plugins.occurrence.models import action
 
 class _occurrence(plugin._plugin):
-    version = 4.1
+    version = 4.2
 
     def install(self):
         # Register models
@@ -15,6 +15,7 @@ class _occurrence(plugin._plugin):
         model.registerModel("occurrence raise","_raiseOccurrence","_trigger","plugins.occurrence.models.trigger")
         model.registerModel("occurrence update","_updateOccurrence","_trigger","plugins.occurrence.models.trigger")
         model.registerModel("occurrence clear","_clearOccurrence","_trigger","plugins.occurrence.models.trigger")
+        model.registerModel("occurrenceUpdate","_occurrenceUpdate","_action","plugins.occurrence.models.action")
 
         # Finding conduct
         foundConducts = conduct._conduct().query(query={"name" : "occurrenceCore"  })["results"]
@@ -121,6 +122,7 @@ class _occurrence(plugin._plugin):
         model.deregisterModel("occurrence raise","_raiseOccurrence","_trigger","plugins.occurrence.models.trigger")
         model.deregisterModel("occurrence update","_updateOccurrence","_trigger","plugins.occurrence.models.trigger")
         model.deregisterModel("occurrence clear","_clearOccurrence","_trigger","plugins.occurrence.models.trigger")
+        model.deregisterModel("occurrenceUpdate","_occurrenceUpdate","_action","plugins.occurrence.models.action")
         
         conduct._conduct().api_delete(query={"name" : "occurrenceCore"  })
         trigger._trigger().api_delete(query={"name" : "occurrenceCore"  })
@@ -128,6 +130,8 @@ class _occurrence(plugin._plugin):
         return True
 
     def upgrade(self,LatestPluginVersion):
+        if self.version < 4.2:
+            model.registerModel("occurrenceUpdate","_occurrenceUpdate","_action","plugins.occurrence.models.action")
         if self.version < 3.1:
             temp = conduct._conduct().getAsClass(query={"name" : "occurrenceCore"  })
             if len(temp) == 1:
