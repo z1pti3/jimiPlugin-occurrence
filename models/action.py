@@ -130,13 +130,13 @@ class _occurrenceClean(action._action):
                     foundOccurrenceCache[foundOccurrence["occurrenceFlowID"]]["exitCodeMode"] = { "actionID": tempOccurrence._id, "conducts" : conducts }
 
             conducts = foundOccurrenceCache[foundOccurrence["occurrenceFlowID"]]["exitCodeMode"]["conducts"]
-            data = conduct.flowDataTemplate()
-            data["triggerID"] =  tempOccurrence._id
-            data["clearOccurrence"] = True
+            data = conduct.dataTemplate()
+            data["flowData"]["trigger_id"] =  tempOccurrence._id
+            data["flowData"]["clearOccurrence"] = True
             # If occurrence contains the orgnial data var and event then apply it to the data passsed to clear
             if "data" in foundOccurrence:
-                data["event"] = foundOccurrence["data"]["event"]
-                data["var"] = foundOccurrence["data"]["var"]
+                data["flowData"]["event"] = foundOccurrence["data"]["event"]
+                data["flowData"]["var"] = foundOccurrence["data"]["var"]
             for conduct_ in conducts:
                 loadedConduct = None
                 if conduct_["classID"] not in conductsCache:
@@ -154,8 +154,8 @@ class _occurrenceClean(action._action):
                     try:
                         cache.globalCache.delete("occurrenceCacheMatch",foundOccurrence["match"])
                         eventStat = { "first" : True, "current" : 0, "total" : 1, "last" : True }
-                        tempData = conduct.copyFlowData(data)
-                        tempData["eventStats"] = eventStat
+                        tempData = conduct.copyData(data)
+                        tempData["flowData"]["eventStats"] = eventStat
                         loadedConduct.triggerHandler(foundOccurrence["occurrenceFlowID"],tempData,flowIDType=True)
                     except Exception as e:
                         pass # Error handling is needed here

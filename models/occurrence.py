@@ -31,7 +31,7 @@ class _occurrence(db._document):
         self.occurrenceTime = int(time.time())
         self.lullTime = (self.occurrenceTime + occurrenceObj.lullTime)
         self.occurrenceActionID = occurrenceObj._id
-        self.occurrenceFlowID = data["flowID"]
+        self.occurrenceFlowID = data["flow_id"]
         self.lullTimeExpired = occurrenceObj.lullTimeExpiredCount
         if "callingTriggerID" in data:
             if data["callingTriggerID"] != "":
@@ -40,7 +40,7 @@ class _occurrence(db._document):
                 logging.debug("Error using callingTriggerID as it is blank")
                 self.triggerID = data["triggerID"]
         else:
-            self.triggerID = data["triggerID"]
+            self.triggerID = data["trigger_id"]
         if self.triggerID == "":
             return None
         self.data = data
