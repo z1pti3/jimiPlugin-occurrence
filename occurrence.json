@@ -1,0 +1,161 @@
+{
+    "name" : "occurrence",
+    "author" : "z1p",
+    "version" : 5.0,
+    "categories" : ["alerting"],
+    "description" : "Provides flows with the ability to raise alarm state, update existing alarms and even run actions when an alarm state is cleared.",
+    "icon" : null,
+    "requirements" : {
+        "jimi_min_version" : null,
+        "jimi_max_version" : null,
+        "plugins" : []
+    },
+    "collections" : {
+        "occurrence" : {
+            "display_name" : "occurrence",
+            "className" : "_occurrence",
+            "class_location" : "models.occurrence",
+            "description" : "Collection that holds the current alarms.",
+            "fields" : [
+                { "schema_item" : "name", "schema_value" : "name", "type" : "input", "label" : "name", "description" : "Occurrence name." },
+                { "schema_item" : "lullTime", "schema_value" : "lullTime", "type" : "input", "label" : "lullTime", "description" : "Amount of time in seconds that must pass whereby the alarm state is not observed." },
+                { "schema_item" : "match", "schema_value" : "match", "type" : "input", "label" : "match", "description" : "The match string that provides a UID for a given alarm." },
+                { "schema_item" : "occurrenceTime", "schema_value" : "occurrenceTime", "type" : "input", "label" : "occurrenceTime", "description" : "Time when the occurrence was raised." },
+                { "schema_item" : "lastOccurrenceTime", "schema_value" : "lastOccurrenceTime", "type" : "input", "label" : "lastOccurrenceTime", "description" : "Time when the alarm state was last observed." },
+                { "schema_item" : "occurrenceActionID", "schema_value" : "occurrenceActionID", "type" : "input", "label" : "occurrenceActionID", "description" : "ActionID for the occurrence raising the alarm." },
+                { "schema_item" : "occurrenceFlowID", "schema_value" : "occurrenceFlowID", "type" : "input", "label" : "occurrenceFlowID", "description" : "FlowID for the occurrence raising the alarm." },
+                { "schema_item" : "lullTimeExpired", "schema_value" : "lullTimeExpired", "type" : "input", "label" : "lullTimeExpired", "description" : "Number of times the triggered that raised the alarm must triggered and not observed before considering the alarm as clear once the lullTime runs out." },
+                { "schema_item" : "lastLullCheck", "schema_value" : "lastLullCheck", "type" : "input", "label" : "lastLullCheck", "description" : "Last time the lullTimeExpired was reduced." },
+                { "schema_item" : "triggerID", "schema_value" : "triggerID", "type" : "input", "label" : "triggerID", "description" : "TriggerID for the occurrence raising the alarm." },
+                { "schema_item" : "triggerID", "schema_value" : "triggerID", "type" : "json-input", "label" : "triggerID", "description" : "Data at the time the alarm was raised." }
+            ],
+            "data_out" : {
+
+            }
+        }
+    },
+    "triggers" : {
+        
+    },
+    "actions" : {
+        "occurrence" : {
+            "display_name" : "occurrence",
+            "className" : "_occurrence",
+            "class_location" : "models.action",
+            "description" : "Action responsible for raising, updating and clearing alarm state based on a given match string UID.",
+            "fields" : [
+                { "schema_item" : "occurrenceMatchString", "schema_value" : "occurrenceMatchString", "type" : "input", "label" : "occurrenceMatchString", "description" : "A string that defines a given alarm UID. i.e. CPU-%%data[event][host]%%.", "required" : true, "jimi_syntax" : true },
+                { "schema_item" : "lullTime", "schema_value" : "lullTime", "type" : "input", "label" : "lullTime", "description" : "A number that represents the number of seconds that must pass after the expired count is 0.", "required" : false, "jimi_syntax" : false },
+                { "schema_item" : "lullTimeExpiredCount", "schema_value" : "lullTimeExpiredCount", "type" : "input", "label" : "lullTimeExpiredCount", "description" : "A number that controls how many times a trigger must fire and the UID is not seen before a lullTime is for expiry. The purpose of this value is to stop an alarm being cleared after system restart but before the trigger has checked if the alarm state is still active.", "required" : false, "jimi_syntax" : false },
+                { "schema_item" : "dbSlowUpdate", "schema_value" : "dbSlowUpdate", "type" : "checkbox", "label" : "dbSlowUpdate", "description" : "When true the occurrence object within the database will only be updated when the lullTime has less than half its time remaining. This is used on busy alarms to reduce the impact on the database.", "required" : false, "jimi_syntax" : false }
+            ],
+            "data_out" : {
+                "result" : { 
+                    "description" : "Returns True if the action completed successfully.",
+                    "type" : "boolean",
+                    "always_present" : true,
+                    "values" : {
+                        "True" : { "description" : "Action completed successfully." },
+                        "False" : { "description" : "Action did not complete successfully, likely due to the occurrence still being committed to the database." }
+                    }
+                },
+                "rc" : {
+                    "description" : "Returns the exit code for the action.",
+                    "type" : "number",
+                    "always_present" : true,
+                    "values" : {
+                        "201" : { "description" : "New alarm raised." },
+                        "205" : { "description" : "Alarm state cleared." },
+                        "302" : { "description" : "Existing alarm found and updated." },
+                        "500" : { "description" : "No ID was found likely due to the occurrence still being committed to the database." }
+                    }
+                },
+                "occurrenceIndex" : {
+                    "description" : "When an alarm is raised or updated a reference index is returned for use within occurrence update and other flow actions.",
+                    "type" : "number",
+                    "always_present" : false,
+                    "values" : {
+                        "(number)" : { "description" : "The index position of the raised or updated occurrence alarm object." }
+                    }
+                },
+                "msg" : {
+                    "description" : "A message that outlines additional information about the result.",
+                    "type" : "string",
+                    "always_present" : false,
+                    "values" : {
+                        "(string)" : { "description" : "A message that outlines additional information about the result." }
+                    }
+                }
+            }
+        },
+        "occurrenceUpdate" : {
+            "display_name" : "occurrenceUpdate",
+            "className" : "_occurrenceUpdate",
+            "class_location" : "models.action",
+            "description" : "Provides the ability to update variables held within the alarm objects data field.",
+            "fields" : [
+                { "schema_item" : "occurrenceVarData", "schema_value" : "occurrenceVarData", "type" : "json-input", "label" : "occurrenceVarData", "description" : "A json object containing variables. i.e. { \"varName\" : { \"value\" : \"varValue\" } }", "required" : true, "jimi_syntax" : true },
+                { "schema_item" : "occurrenceIndex", "schema_value" : "occurrenceIndex", "type" : "input", "label" : "occurrenceIndex", "description" : "The position index returned by occurrence for the alarm you wish to update.", "required" : true, "jimi_syntax" : false },
+                { "schema_item" : "updateMode", "schema_value" : "updateMode", "type" : "input", "label" : "updateMode", "description" : "The mode used to update the variables within the alarm object. 0 = merged, 1 = replace.", "required" : false, "jimi_syntax" : false }
+            ],
+            "data_out" : {
+                "result" : { 
+                    "description" : "Boolean True or False output to represents if the result was successfully or not.",
+                    "type" : "boolean",
+                    "always_present" : true,
+                    "values" : {
+                        "True" : { "description" : "Variable set correctly." },
+                        "False" : { "description" : "Unable to set variable, incorrect format or no occurrence alarm object found at provided index." }
+                    }
+                },
+                "rc" : {
+                    "description" : "Returns the exit code for the action.",
+                    "type" : "number",
+                    "always_present" : true,
+                    "values" : {
+                        "0" : { "description" : "Variable set correctly." },
+                        "404" : { "description" : "Alarm object not found at the given index or variable format was incorrect." }
+                    }
+                },
+                "msg" : {
+                    "description" : "A message that outlines additional information about the result.",
+                    "type" : "string",
+                    "always_present" : false,
+                    "values" : {
+                        "(string)" : { "description" : "A message that outlines additional information about the result." }
+                    }
+                }
+            }
+        },
+        "occurrenceClear" : {
+            "display_name" : "occurrenceClear",
+            "className" : "_occurrenceClear",
+            "class_location" : "models.action",
+            "description" : "Occurrence core functionality responsible for clearing raised alarms.",
+            "fields" : [
+
+            ],
+            "data_out" : {
+                "result" : { 
+                    "description" : "Boolean True or False output to represents if the result was successfully or not.",
+                    "type" : "boolean",
+                    "always_present" : true,
+                    "values" : {
+                        "True" : { "description" : "Completed." }
+                    }
+                },
+                "rc" : {
+                    "description" : "Returns the exit code for the action.",
+                    "type" : "number",
+                    "always_present" : true,
+                    "values" : {
+                        "0" : { "description" : "Completed." }
+                    }
+                }
+            }
+        }
+    },
+    "settings" : {
+
+    }
+}

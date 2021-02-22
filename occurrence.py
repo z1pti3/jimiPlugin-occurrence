@@ -6,15 +6,12 @@ from core.models import conduct, trigger, webui
 from plugins.occurrence.models import action
 
 class _occurrence(plugin._plugin):
-    version = 4.2
+    version = 5.0
 
     def install(self):
         # Register models
         model.registerModel("occurrence","_occurrence","_action","plugins.occurrence.models.action")
         model.registerModel("occurrence clean","_occurrenceClean","_action","plugins.occurrence.models.action")
-        model.registerModel("occurrence raise","_raiseOccurrence","_trigger","plugins.occurrence.models.trigger")
-        model.registerModel("occurrence update","_updateOccurrence","_trigger","plugins.occurrence.models.trigger")
-        model.registerModel("occurrence clear","_clearOccurrence","_trigger","plugins.occurrence.models.trigger")
         model.registerModel("occurrenceUpdate","_occurrenceUpdate","_action","plugins.occurrence.models.action")
 
         # Finding conduct
@@ -97,21 +94,6 @@ class _occurrence(plugin._plugin):
             temp = temp[0]
             temp.hidden = True
             temp.update(["hidden"])
-        temp = model._model().getAsClass(query={ "name" : "occurrence raise" })
-        if len(temp) == 1:
-            temp = temp[0]
-            temp.hidden = True
-            temp.update(["hidden"])
-        temp = model._model().getAsClass(query={ "name" : "occurrence update" })
-        if len(temp) == 1:
-            temp = temp[0]
-            temp.hidden = True
-            temp.update(["hidden"])
-        temp = model._model().getAsClass(query={ "name" : "occurrence clear" })
-        if len(temp) == 1:
-            temp = temp[0]
-            temp.hidden = True
-            temp.update(["hidden"])
 
         return True
 
@@ -119,9 +101,6 @@ class _occurrence(plugin._plugin):
         # deregister models
         model.deregisterModel("occurrence","_occurrence","_action","plugins.occurrence.models.action")
         model.deregisterModel("occurrence clean","_occurrenceClean","_action","plugins.occurrence.models.action")
-        model.deregisterModel("occurrence raise","_raiseOccurrence","_trigger","plugins.occurrence.models.trigger")
-        model.deregisterModel("occurrence update","_updateOccurrence","_trigger","plugins.occurrence.models.trigger")
-        model.deregisterModel("occurrence clear","_clearOccurrence","_trigger","plugins.occurrence.models.trigger")
         model.deregisterModel("occurrenceUpdate","_occurrenceUpdate","_action","plugins.occurrence.models.action")
         
         conduct._conduct().api_delete(query={"name" : "occurrenceCore"  })
@@ -130,60 +109,8 @@ class _occurrence(plugin._plugin):
         return True
 
     def upgrade(self,LatestPluginVersion):
-        if self.version < 4.2:
-            model.registerModel("occurrenceUpdate","_occurrenceUpdate","_action","plugins.occurrence.models.action")
-        if self.version < 3.1:
-            temp = conduct._conduct().getAsClass(query={"name" : "occurrenceCore"  })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
-                temp.flow[0]["next"] = [{"flowID": temp.flow[1]["flowID"], "logic": True }]
-                temp.update(["flow","acl"])
-                webui._modelUI().new(temp._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },temp.flow[0]["flowID"],0,0,"")
-                webui._modelUI().new(temp._id,{ "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] },temp.flow[1]["flowID"],250,0,"")
-            temp = model._model().getAsClass(query={ "name" : "occurrence clean" })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
-                temp.update(["acl"])
-            temp = model._model().getAsClass(query={ "name" : "occurrence raise" })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
-                temp.update(["acl"])
-            temp = model._model().getAsClass(query={ "name" : "occurrence update" })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
-                temp.update(["acl"])
-            temp = model._model().getAsClass(query={ "name" : "occurrence clear" })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.acl = { "ids":[ { "accessID":"0","delete": True,"read": True,"write": True } ] }
-                temp.update(["acl"])
-
-        # Hiding object types
-        if self.version < 2:
-            temp = model._model().getAsClass(query={ "name" : "occurrence clean" })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.hidden = True
-                temp.update(["hidden"])
-            temp = model._model().getAsClass(query={ "name" : "occurrence raise" })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.hidden = True
-                temp.update(["hidden"])
-            temp = model._model().getAsClass(query={ "name" : "occurrence update" })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.hidden = True
-                temp.update(["hidden"])
-            temp = model._model().getAsClass(query={ "name" : "occurrence clear" })
-            if len(temp) == 1:
-                temp = temp[0]
-                temp.hidden = True
-                temp.update(["hidden"])
+        if self.version < 5:
+            pass
 
         return True
     
