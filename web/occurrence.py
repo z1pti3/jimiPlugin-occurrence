@@ -9,7 +9,7 @@ from plugins.occurrence.models import occurrence
 
 pluginPages = Blueprint('occurrencePages', __name__, template_folder="templates")
 
-@pluginPages.route("/occurrence/")
+@pluginPages.route("/")
 def mainPage():
     foundOccurrences = occurrence._occurrence().query(sessionData=api.g.sessionData)["results"]
     occurrences = []
@@ -38,7 +38,7 @@ def mainPage():
         occurrences.append(o)
     return render_template("occurrence.html", occurrences=occurrences)
 
-@pluginPages.route("/occurrence/<occurrenceID>/clear/")
+@pluginPages.route("/<occurrenceID>/clear/")
 def clearOccurrence(occurrenceID):
     foundOccurence =  occurrence._occurrence().query(sessionData=api.g.sessionData,id=occurrenceID)["results"]
     if len(foundOccurence) == 1:
