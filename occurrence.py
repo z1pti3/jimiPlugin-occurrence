@@ -28,7 +28,7 @@ class _occurrence(plugin._plugin):
             return False
 
         # Finding trigger
-        foundTriggers = trigger._trigger().query(query={"name" : "occurrenceCore"  })["results"]
+        foundTriggers = trigger._trigger(False).query(query={"name" : "occurrenceCore"  })["results"]
         if len(foundTriggers) == 0:
             # Install
             t = trigger._trigger().new("occurrenceCore")
