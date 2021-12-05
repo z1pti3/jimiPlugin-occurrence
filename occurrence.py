@@ -62,7 +62,7 @@ class _occurrence(plugin._plugin):
                 "type" : "trigger",
                 "triggerID" : t._id,
                 "next" : [
-                    {"flowID": flowActionID, "logic": True }
+                    {"flowID": flowActionID, "logic": True, "tag" : "" }
                 ]
             },
             {
