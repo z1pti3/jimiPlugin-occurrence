@@ -16,12 +16,13 @@ class _occurrence(action._action):
     lullTimeExpiredCount = int()
     dbSlowUpdate = bool()
 
-    def __init__(self):
+    def __init__(self,restrictClass=True):
         # Used to cahce object loads and reduce database requests ( set to none some schema excludes them )
         cache.globalCache.newCache("occurrenceCache",maxSize=10485760)
         cache.globalCache.newCache("occurrenceCacheMatch",maxSize=10485760)
         cache.globalCache.get("occurrenceCache","all",getOccurrenceObjects)
         self.bulkClass = db._bulk()
+        return super(_occurrence, self).__init__(restrictClass)
 
     def postRun(self):
         self.bulkClass.bulkOperatonProcessing()
